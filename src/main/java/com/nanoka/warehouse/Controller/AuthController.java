@@ -1,5 +1,6 @@
 package com.nanoka.warehouse.Controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,7 +21,8 @@ import lombok.RequiredArgsConstructor;
 @CrossOrigin(origins = {"http://localhost:4200"})
 public class AuthController {
     
-    private final AuthService authService;
+    @Autowired
+    private AuthService authService;
     
     @PostMapping(value = "login")
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request)

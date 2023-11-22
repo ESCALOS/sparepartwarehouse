@@ -1,5 +1,10 @@
 package com.nanoka.warehouse.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,8 +23,38 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class UserService {
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private ModelMapper modelMapper;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    public ResponseEntity<?> getUsers()
+    {
+        List<User> users = userRepository.findAll();
+
+        List<UserDto> usersDto = users.stream()
+                                    .map(this::userToDto)
+                                    .collect(Collectors.toList());
+
+        MessageResponse response = MessageResponse.builder()
+            .message("Lista de usuarios")
+            .error(false)
+            .data(usersDto)
+            .build();
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+                                    
+    }
+
+    private UserDto userToDto(User user)
+    {
+        return modelMapper.map(user, UserDto.class);
+    }
 
     @Transactional
     public ResponseEntity<?> saveUser(UserRequest userRequest) {

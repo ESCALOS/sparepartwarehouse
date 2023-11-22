@@ -1,5 +1,6 @@
 package com.nanoka.warehouse.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.Modifying;
@@ -11,6 +12,9 @@ import com.nanoka.warehouse.Model.Entity.User;
 
 
 public interface UserRepository extends CrudRepository<User, Integer> {
+
+    List<User> findAll();
+
     Optional<User> findByUsername(String username);
 
     @Modifying()

@@ -1,7 +1,9 @@
 package com.nanoka.warehouse.Controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -10,8 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nanoka.warehouse.Model.Entity.Supplier;
 import com.nanoka.warehouse.Service.SupplierService;
-import com.nanoka.warehouse.Service.Request.SupplierRequest;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,23 +23,38 @@ import lombok.RequiredArgsConstructor;
 @CrossOrigin(origins = {"http://localhost:4200"})
 public class SupplierController {
 
-    private final SupplierService supplierService;
+    @Autowired
+    private SupplierService supplierService;
     
-    @GetMapping(value = "{id}")
-    public ResponseEntity<?> getUser(@PathVariable Long id)
+    @GetMapping
+    public ResponseEntity<?> getSuppliers()
     {
-        return supplierService.findById(id);
+        return supplierService.getSuppliers();
+    }
+
+    @GetMapping(value = "{id}")
+    public ResponseEntity<?> getSupplier(@PathVariable Long id)
+    {
+        return supplierService.getSupplier(id);
     }
 
     @PostMapping()
-    public ResponseEntity<?> saveUser(@RequestBody SupplierRequest supplierRequest)
+    public ResponseEntity<?> saveSupplier(@RequestBody Supplier supplier)
     {
-        return supplierService.save(supplierRequest);
+        return supplierService.saveSupplier(supplier);
     }
 
     @PutMapping()
-    public ResponseEntity<?> updateUser(@RequestBody SupplierRequest supplierRequest)
+    public ResponseEntity<?> updateSupplier(@RequestBody Supplier supplier)
     {
-        return supplierService.update(supplierRequest);
+        return supplierService.updateSupplier(supplier);
+    }
+
+    @DeleteMapping(value = "{id}")
+    public ResponseEntity<?> deleteSupplier(@PathVariable Long id)
+    {
+        return supplierService.deleteSupplier(id);
+
+
     }
 }
