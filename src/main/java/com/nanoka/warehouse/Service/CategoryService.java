@@ -7,48 +7,47 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import com.nanoka.warehouse.Model.Entity.Supplier;
+import com.nanoka.warehouse.Model.Entity.Category;
 import com.nanoka.warehouse.Model.Payload.MessageResponse;
-import com.nanoka.warehouse.Repository.SupplierRepository;
+import com.nanoka.warehouse.Repository.CategoryRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class SupplierService {
-    
+public class CategoryService {
     @Autowired
-    private SupplierRepository supplierRepository;
+    private CategoryRepository categoryRepository;
 
-    public ResponseEntity<?> getSuppliers()
+    public ResponseEntity<?> getCategories()
     {
-        List<Supplier> users = supplierRepository.findAll();
+        List<Category> categories = categoryRepository.findAll();
 
         MessageResponse response = MessageResponse.builder()
-            .message("Lista de proveedores")
+            .message("Lista de categorías")
             .error(false)
-            .data(users)
+            .data(categories)
             .build();
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    public ResponseEntity<?> getSupplier(Long id) 
+    public ResponseEntity<?> getCategory(Long id) 
     {
-        Supplier supplier = supplierRepository.findById(id).orElse(null);
-        if(supplier != null)
+        Category Category = categoryRepository.findById(id).orElse(null);
+        if(Category != null)
         {
             MessageResponse response = MessageResponse.builder()
-                .message("Proveedor encontrado")
+                .message("Categoría encontrada")
                 .error(false)
-                .data(supplier)
+                .data(Category)
                 .build();
             return new ResponseEntity<>(response,HttpStatus.OK);
         }
 
         MessageResponse response = MessageResponse.builder()
-           .message("Proveedor no encontrado")
+           .message("Categoría no encontrada")
            .error(true)
            .data(null)
            .build();
@@ -57,14 +56,14 @@ public class SupplierService {
     }
 
     @Transactional
-    public ResponseEntity<?> saveSupplier(Supplier supplier)
+    public ResponseEntity<?> saveCategory(Category Category)
     {
         MessageResponse response;
         HttpStatus status;
 
-        if(supplierRepository.existsByName(supplier.getName())) {
+        if(categoryRepository.existsByName(Category.getName())) {
             response = MessageResponse.builder()
-               .message("El proveedor ya existe")
+               .message("La categoría ya existe")
                .error(true)
                .data(null)
                .build();
@@ -72,21 +71,21 @@ public class SupplierService {
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
 
-        Supplier supplierSaved = supplierRepository.save(supplier);
+        Category categorySaved = categoryRepository.save(Category);
 
-        if(supplierSaved != null)
+        if(categorySaved != null)
         {
             status = HttpStatus.CREATED;
             response = MessageResponse.builder()
-                .message("Proveedor creado")
+                .message("Categoría creada")
                 .error(false)
-                .data(supplier)
+                .data(Category)
                 .build();
                 
         }else{
             status = HttpStatus.BAD_REQUEST;
             response = MessageResponse.builder()
-               .message("No se pudo crear el proveedor")
+               .message("No se pudo crear la categoría")
                .error(true)
                .data(null)
                .build();
@@ -95,60 +94,60 @@ public class SupplierService {
         return new ResponseEntity<>(response, status);
     }
 
-    public ResponseEntity<?> updateSupplier(Supplier supplier)
+    public ResponseEntity<?> updateCategory(Category Category)
     {
         MessageResponse response;
         HttpStatus status;
 
-        if(supplierRepository.countSuppliersWithSameNameExceptCurrentSupplier(supplier.getName(), supplier.getId()) > 0) {
+        if(categoryRepository.countCategoriesWithSameNameExceptCurrentCategory(Category.getName(), Category.getId()) > 0) {
             status = HttpStatus.BAD_REQUEST;
             response = MessageResponse.builder()
-               .message("El proveedor ya existe")
+               .message("La categoría ya existe")
                .error(true)
                .data(null)
                .build();
         }else{
             
-                Supplier supplierSaved = supplierRepository.save(supplier);
+            Category categorySaved = categoryRepository.save(Category);
 
-                if(supplierSaved != null)
-                {
-                    status = HttpStatus.CREATED;
-                    response = MessageResponse.builder()
-                        .message("Proveedor actualizado")
-                        .error(false)
-                        .data(supplier)
-                        .build();
-                        
-                }else{
-                    status = HttpStatus.BAD_REQUEST;
-                    response = MessageResponse.builder()
-                    .message("No se pudo crear el proveedor")
-                    .error(true)
-                    .data(null)
+            if(categorySaved != null)
+            {
+                status = HttpStatus.CREATED;
+                response = MessageResponse.builder()
+                    .message("Categoría actualizado")
+                    .error(false)
+                    .data(Category)
                     .build();
-                }
+                    
+            }else{
+                status = HttpStatus.BAD_REQUEST;
+                response = MessageResponse.builder()
+                .message("No se pudo crear la categoría")
+                .error(true)
+                .data(null)
+                .build();
+            }
         }
         return new ResponseEntity<>(response, status);
     }
 
-    public ResponseEntity<?> deleteSupplier(Long id)
+    public ResponseEntity<?> deleteCategory(Long id)
     {
         MessageResponse response;
         HttpStatus status;
 
-        if (!supplierRepository.existsById(id)) {
+        if (!categoryRepository.existsById(id)) {
             response = MessageResponse.builder()
-                .message("El proveedor no existe")
+                .message("La categoría no existe")
                 .error(true)
                 .data(null)
                 .build();
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
 
-        supplierRepository.deleteById(id);
+        categoryRepository.deleteById(id);
 
-        if(supplierRepository.existsById(id))
+        if(categoryRepository.existsById(id))
         {
             status = HttpStatus.BAD_REQUEST;
             response = MessageResponse.builder()
@@ -159,7 +158,7 @@ public class SupplierService {
         }else{
             status = HttpStatus.OK;
             response = MessageResponse.builder()
-                .message("Proveedor eliminado")
+                .message("Categoría eliminada")
                 .error(false)
                 .data(null)
                 .build();
@@ -167,5 +166,4 @@ public class SupplierService {
 
         return new ResponseEntity<>(response, status);
     }
-
 }

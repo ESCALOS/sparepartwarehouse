@@ -18,11 +18,10 @@ import com.nanoka.warehouse.Service.SupplierService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping(value = "/api/v1/supplier")
+@RequestMapping(value = "/api/v1/movement")
 @RequiredArgsConstructor
 @CrossOrigin(origins = {"http://localhost:4200"})
-public class SupplierController {
-
+public class MovementController {
     @Autowired
     private SupplierService supplierService;
     
