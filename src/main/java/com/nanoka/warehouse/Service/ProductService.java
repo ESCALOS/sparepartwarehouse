@@ -1,5 +1,6 @@
 package com.nanoka.warehouse.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,11 +70,8 @@ public class ProductService {
     @Transactional
     public ResponseEntity<?> saveProduct(ProductRequest productRequest)
     {
-        MessageResponse response;
-        HttpStatus status;
-
         if(productRepository.existsByName(productRequest.getName())) {
-            response = MessageResponse.builder()
+            MessageResponse response = MessageResponse.builder()
                .message("El producto ya existe")
                .error(true)
                .data(null)
@@ -84,7 +82,7 @@ public class ProductService {
 
         if(!categoryRepository.existsById(productRequest.getCategoryId()))
         {
-            response = MessageResponse.builder()
+            MessageResponse response = MessageResponse.builder()
                 .message("La categoría no existe")
                 .error(true)
                 .data(null)
@@ -95,7 +93,7 @@ public class ProductService {
 
         if(!supplierRepository.existsById(productRequest.getSupplierId()))
         {
-            response = MessageResponse.builder()
+            MessageResponse response = MessageResponse.builder()
                 .message("El proveedor no existe")
                 .error(true)
                 .data(null)
@@ -104,76 +102,7 @@ public class ProductService {
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
 
-        Category category = categoryRepository.findById(productRequest.getCategoryId()).orElse(null);
-        Supplier supplier = supplierRepository.findById(productRequest.getSupplierId()).orElse(null);
-
-        Product product = Product.builder()
-            .name(productRequest.getName())
-            .measurementUnit(productRequest.getMeasurementUnit())
-            .category(category)
-            .supplier(supplier)
-            .stock(productRequest.getStock())
-            .stockMin(productRequest.getStockMin())
-            .price(productRequest.getPrice())
-            .build();
-
-
-        Product productSaved = productRepository.save(product);
-
-        if(productSaved != null)
-        {
-            status = HttpStatus.CREATED;
-            response = MessageResponse.builder()
-                .message("Producto creado")
-                .error(false)
-                .data(productSaved)
-                .build();
-                
-        }else{
-            status = HttpStatus.BAD_REQUEST;
-            response = MessageResponse.builder()
-               .message("No se pudo crear el producto")
-               .error(true)
-               .data(null)
-               .build();
-        }
-
-        return new ResponseEntity<>(response, status);
-    }
-
-    public ResponseEntity<?> updateProduct(ProductRequest productRequest)
-    {
-        MessageResponse response;
-        HttpStatus status;
-
-        if(productRepository.countProductsWithSameNameExceptCurrentProduct(productRequest.getName(), productRequest.getId()) > 0) {
-            status = HttpStatus.BAD_REQUEST;
-            response = MessageResponse.builder()
-               .message("El producto ya existe")
-               .error(true)
-               .data(null)
-               .build();
-        }else{
-            if(productRepository.existsByName(productRequest.getName())) {
-                response = MessageResponse.builder()
-                .message("El producto ya existe")
-                .error(true)
-                .data(null)
-                .build();
-
-                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-            }
-
-            if(!categoryRepository.existsById(productRequest.getCategoryId())){
-                response = MessageResponse.builder()
-                    .message("La categoría no existe")
-                    .error(true)
-                    .data(null)
-                    .build();
-
-                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-            }
-
+        try {
             Category category = categoryRepository.findById(productRequest.getCategoryId()).orElse(null);
             Supplier supplier = supplierRepository.findById(productRequest.getSupplierId()).orElse(null);
 
@@ -182,41 +111,94 @@ public class ProductService {
                 .measurementUnit(productRequest.getMeasurementUnit())
                 .category(category)
                 .supplier(supplier)
-                .stock(productRequest.getStock())
+                .stock(0)
                 .stockMin(productRequest.getStockMin())
-                .price(productRequest.getPrice())
+                .price(BigDecimal.ZERO)
                 .build();
 
-            Product productUpdated = productRepository.save(product);
+            productRepository.save(product);
 
-            if(productUpdated != null)
-            {
-                status = HttpStatus.CREATED;
-                response = MessageResponse.builder()
-                    .message("Producto actualizado")
-                    .error(false)
-                    .data(productUpdated)
-                    .build();
-                    
-            }else{
-                status = HttpStatus.BAD_REQUEST;
-                response = MessageResponse.builder()
+            MessageResponse response = MessageResponse.builder()
+                .message("Producto creado")
+                .error(false)
+                .data(product)
+                .build();
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
+        } catch (Exception e) {
+            MessageResponse response = MessageResponse.builder()
+               .message("No se pudo crear el producto")
+               .error(true)
+               .data(null)
+               .build();
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    public ResponseEntity<?> updateProduct(ProductRequest productRequest)
+    {
+        if(productRepository.countProductsWithSameNameExceptCurrentProduct(productRequest.getName(), productRequest.getId()) > 0) {
+            MessageResponse response = MessageResponse.builder()
+               .message("El nombre del producto ya existe")
+               .error(true)
+               .data(null)
+               .build();
+               return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+
+        if(!categoryRepository.existsById(productRequest.getCategoryId())){
+            MessageResponse response = MessageResponse.builder()
+                .message("La categoría no existe")
+                .error(true)
+                .data(null)
+                .build();
+
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+
+        if(!supplierRepository.existsById(productRequest.getSupplierId())){
+            MessageResponse response = MessageResponse.builder()
+                .message("El proveedor no existe")
+                .error(true)
+                .data(null)
+                .build();
+
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+
+        try {
+            Category category = categoryRepository.findById(productRequest.getCategoryId()).orElse(null);
+            Supplier supplier = supplierRepository.findById(productRequest.getSupplierId()).orElse(null);
+
+            Product product = productRepository.findById(productRequest.getId()).orElse(null);
+
+            product.setName(productRequest.getName());
+            product.setMeasurementUnit(productRequest.getMeasurementUnit());
+            product.setCategory(category);
+            product.setSupplier(supplier);
+            product.setStockMin(productRequest.getStockMin());
+
+            productRepository.save(product);
+
+            MessageResponse response = MessageResponse.builder()
+                .message("Producto actualizado")
+                .error(false)
+                .data(product)
+                .build();
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
+        } catch (Exception e) {
+                MessageResponse response = MessageResponse.builder()
                 .message("No se pudo crear el producto")
                 .error(true)
                 .data(null)
                 .build();
-            }
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<>(response, status);
     }
 
     public ResponseEntity<?> deleteProduct(Long id)
     {
-        MessageResponse response;
-        HttpStatus status;
-
         if (!productRepository.existsById(id)) {
-            response = MessageResponse.builder()
+            MessageResponse response = MessageResponse.builder()
                 .message("El producto no existe")
                 .error(true)
                 .data(null)
@@ -224,25 +206,21 @@ public class ProductService {
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
 
-        productRepository.deleteById(id);
-
-        if(productRepository.existsById(id))
-        {
-            status = HttpStatus.BAD_REQUEST;
-            response = MessageResponse.builder()
-                .message("No se pudo eliminar")
-                .error(true)
-                .data(null)
-                .build();
-        }else{
-            status = HttpStatus.OK;
-            response = MessageResponse.builder()
+        try {
+            productRepository.deleteById(id);
+            MessageResponse response = MessageResponse.builder()
                 .message("Producto eliminado")
                 .error(false)
                 .data(null)
                 .build();
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            MessageResponse response = MessageResponse.builder()
+                .message("No se pudo eliminar")
+                .error(true)
+                .data(null)
+                .build();
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
-
-        return new ResponseEntity<>(response, status);
     }
 }

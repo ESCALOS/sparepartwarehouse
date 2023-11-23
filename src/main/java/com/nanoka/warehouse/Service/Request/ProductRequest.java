@@ -1,7 +1,5 @@
 package com.nanoka.warehouse.Service.Request;
 
-import java.math.BigDecimal;
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,7 +18,5 @@ public class ProductRequest {
     String measurementUnit;
     Long categoryId;
     Long supplierId;
-    Integer stock;
     Integer stockMin;
-    BigDecimal price;
 }

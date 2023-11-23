@@ -1,19 +1,22 @@
 package com.nanoka.warehouse.Service;
 
+import java.security.Principal;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.nanoka.warehouse.Dto.UserDto;
 import com.nanoka.warehouse.Jwt.JwtService;
 import com.nanoka.warehouse.Model.Entity.User;
-import com.nanoka.warehouse.Model.Enum.Role;
 import com.nanoka.warehouse.Model.Payload.AuthResponse;
+import com.nanoka.warehouse.Model.Payload.MessageResponse;
 import com.nanoka.warehouse.Repository.UserRepository;
 import com.nanoka.warehouse.Service.Request.LoginRequest;
-import com.nanoka.warehouse.Service.Request.RegisterRequest;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,10 +26,10 @@ public class AuthService {
 
     @Autowired
     private UserRepository userRepository;
+
     @Autowired
     private JwtService jwtService;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+
     @Autowired
     private AuthenticationManager authenticationManager;
 
@@ -40,19 +43,24 @@ public class AuthService {
 
     }
 
-    public AuthResponse register(RegisterRequest request) {
-        User user = User.builder()
-            .username(request.getUsername())
-            .password(passwordEncoder.encode( request.getPassword()))
-            .name(request.getName())
-            .role(Role.USER)
+    public ResponseEntity<?> currentUser(Principal principal)
+    {
+        User user = userRepository.findByUsername(principal.getName()).orElse(null);
+
+        UserDto userDto = UserDto.builder()
+            .id(user.getId())
+            .name(user.getName())
+            .username(user.getUsername())
+            .role(user.getRole())
             .build();
 
-        userRepository.save(user);
-
-        return AuthResponse.builder()
-            .token(jwtService.getToken(user))
+        MessageResponse response = MessageResponse.builder()
+            .message("Usuario encontrado")
+            .data(userDto)
+            .error(false)
             .build();
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
 }

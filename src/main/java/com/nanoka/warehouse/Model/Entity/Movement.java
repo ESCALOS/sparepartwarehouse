@@ -7,6 +7,8 @@ import com.nanoka.warehouse.Model.Enum.MovementType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -41,7 +43,7 @@ public class Movement {
     @Column(precision = 10, scale = 2)
     BigDecimal price;
 
-    @Column(name = "movement_type")
+    @Enumerated(EnumType.STRING)
     MovementType movementType;
 
     LocalDateTime date;

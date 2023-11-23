@@ -12,8 +12,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.nanoka.warehouse.Model.Entity.Supplier;
-import com.nanoka.warehouse.Service.SupplierService;
+import com.nanoka.warehouse.Model.Entity.Movement;
+import com.nanoka.warehouse.Model.Enum.MovementType;
+import com.nanoka.warehouse.Service.MovementService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,35 +24,47 @@ import lombok.RequiredArgsConstructor;
 @CrossOrigin(origins = {"http://localhost:4200"})
 public class MovementController {
     @Autowired
-    private SupplierService supplierService;
+    private MovementService movementService;
     
     @GetMapping
-    public ResponseEntity<?> getSuppliers()
+    public ResponseEntity<?> getMovements()
     {
-        return supplierService.getSuppliers();
+        return movementService.getMovements();
+    }
+
+    @GetMapping(value = "input")
+    public ResponseEntity<?> getInputs()
+    {
+        return movementService.getMovementsByMovementType(MovementType.INGRESO);
+    }
+
+    @GetMapping(value = "output")
+    public ResponseEntity<?> getOutputs()
+    {
+        return movementService.getMovementsByMovementType(MovementType.SALIDA);
     }
 
     @GetMapping(value = "{id}")
-    public ResponseEntity<?> getSupplier(@PathVariable Long id)
+    public ResponseEntity<?> getMovement(@PathVariable Long id)
     {
-        return supplierService.getSupplier(id);
+        return movementService.getMovement(id);
     }
 
     @PostMapping()
-    public ResponseEntity<?> saveSupplier(@RequestBody Supplier supplier)
+    public ResponseEntity<?> saveMovement(@RequestBody Movement movement)
     {
-        return supplierService.saveSupplier(supplier);
+        return movementService.saveMovement(movement);
     }
 
     @PutMapping()
-    public ResponseEntity<?> updateSupplier(@RequestBody Supplier supplier)
+    public ResponseEntity<?> updateMovement(@RequestBody Movement movement)
     {
-        return supplierService.updateSupplier(supplier);
+        return movementService.updateMovement(movement);
     }
 
     @DeleteMapping(value = "{id}")
-    public ResponseEntity<?> deleteSupplier(@PathVariable Long id)
+    public ResponseEntity<?> deleteMovement(@PathVariable Long id)
     {
-        return supplierService.deleteSupplier(id);
+        return movementService.deleteMovement(id);
     }
 }

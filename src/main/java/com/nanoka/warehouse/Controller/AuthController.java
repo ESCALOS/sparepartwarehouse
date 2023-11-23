@@ -1,5 +1,7 @@
 package com.nanoka.warehouse.Controller;
 
+import java.security.Principal;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -11,9 +13,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.nanoka.warehouse.Model.Payload.AuthResponse;
 import com.nanoka.warehouse.Service.AuthService;
 import com.nanoka.warehouse.Service.Request.LoginRequest;
-import com.nanoka.warehouse.Service.Request.RegisterRequest;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
+
 
 @RestController
 @RequestMapping("/auth")
@@ -30,9 +33,9 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(request));
     }
 
-    @PostMapping(value = "register")
-    public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request)
-    {
-        return ResponseEntity.ok(authService.register(request));
+    @GetMapping(value="current-user")
+    public ResponseEntity<?> currentUser(Principal principal){
+        return authService.currentUser(principal);
     }
+    
 }

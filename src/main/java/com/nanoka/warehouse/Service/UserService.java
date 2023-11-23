@@ -72,7 +72,7 @@ public class UserService {
             .username(userRequest.getUsername())
             .password(passwordEncoder.encode( userRequest.getPassword()))
             .name(userRequest.getName())
-            .role(Role.USER)
+            .role(Role.USUARIO)
             .build();
 
         User userSaved = userRepository.save(user);

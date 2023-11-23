@@ -8,8 +8,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.nanoka.warehouse.Model.Entity.Movement;
+import com.nanoka.warehouse.Model.Entity.Product;
+import com.nanoka.warehouse.Model.Enum.MovementType;
 import com.nanoka.warehouse.Model.Payload.MessageResponse;
 import com.nanoka.warehouse.Repository.MovementRepository;
+import com.nanoka.warehouse.Repository.ProductRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 public class MovementService {
     @Autowired
     private MovementRepository movementRepository;
+
+    @Autowired ProductRepository productRepository;
 
     public ResponseEntity<?> getMovements()
     {
@@ -30,6 +35,21 @@ public class MovementService {
             .data(movements)
             .build();
 
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    public ResponseEntity<?> getMovementsByMovementType(MovementType movementType)
+    {
+        List<Movement> movements = movementRepository.findByMovementType(movementType);
+
+        String movementTypeString = MovementType.INGRESO.equals(movementType) ? "ingresos" : "salidas";
+
+        MessageResponse response = MessageResponse.builder()
+            .message("Lista de " + movementTypeString)
+            .error(false)
+            .data(movements)
+            .build();
+            
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
@@ -58,66 +78,75 @@ public class MovementService {
     @Transactional
     public ResponseEntity<?> saveMovement(Movement movement)
     {
-        MessageResponse response;
-        HttpStatus status;
+         if(!productRepository.existsById(movement.getProduct().getId()))
+         {
+            movementRepository.save(movement);
+            MessageResponse response = MessageResponse.builder()
+                .message("El producto no existe")
+                .error(true)
+                .data(movement)
+                .build();
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+         }
 
-        Movement movementSaved = movementRepository.save(movement);
+        try {
+            Product product = productRepository.findById(movement.getProduct().getId()).orElse(null);
 
-        if(movementSaved != null)
-        {
-            status = HttpStatus.CREATED;
-            response = MessageResponse.builder()
+            if(product.getStock() < movement.getQuantity())
+            {
+                movementRepository.save(movement);
+                MessageResponse response = MessageResponse.builder()
+                    .message("No hay suficientes unidades en el producto")
+                    .error(true)
+                    .data(movement)
+                    .build();
+                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+            }
+
+            product.setStock(product.getStock() - movement.getQuantity());
+            productRepository.save(product);
+
+            movementRepository.save(movement);
+            MessageResponse response = MessageResponse.builder()
                 .message("Movimiento creado")
                 .error(false)
                 .data(movement)
                 .build();
-                
-        }else{
-            status = HttpStatus.BAD_REQUEST;
-            response = MessageResponse.builder()
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
+        } catch (Exception e) {
+            MessageResponse response = MessageResponse.builder()
                .message("No se pudo crear el movimiento")
                .error(true)
                .data(null)
                .build();
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
-
-        return new ResponseEntity<>(response, status);
     }
 
     public ResponseEntity<?> updateMovement(Movement movement)
     {
-        MessageResponse response;
-        HttpStatus status;
-
-        Movement movementSaved = movementRepository.save(movement);
-
-        if(movementSaved != null)
-        {
-            status = HttpStatus.CREATED;
-            response = MessageResponse.builder()
+        try {
+            movementRepository.save(movement);
+            MessageResponse response = MessageResponse.builder()
                 .message("Movimiento actualizado")
                 .error(false)
                 .data(movement)
                 .build();
-                
-        }else{
-            status = HttpStatus.BAD_REQUEST;
-            response = MessageResponse.builder()
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
+        } catch (Exception e) {
+            MessageResponse response = MessageResponse.builder()
             .message("No se pudo crear el movimiento")
             .error(true)
             .data(null)
             .build();
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<>(response, status);
     }
 
     public ResponseEntity<?> deleteMovement(Long id)
     {
-        MessageResponse response;
-        HttpStatus status;
-
         if (!movementRepository.existsById(id)) {
-            response = MessageResponse.builder()
+            MessageResponse response = MessageResponse.builder()
                 .message("El movimiento no existe")
                 .error(true)
                 .data(null)
@@ -125,25 +154,22 @@ public class MovementService {
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
 
-        movementRepository.deleteById(id);
-
-        if(movementRepository.existsById(id))
-        {
-            status = HttpStatus.BAD_REQUEST;
-            response = MessageResponse.builder()
-                .message("No se pudo eliminar")
-                .error(true)
-                .data(null)
-                .build();
-        }else{
-            status = HttpStatus.OK;
-            response = MessageResponse.builder()
+        try {
+            movementRepository.deleteById(id);
+            MessageResponse response = MessageResponse.builder()
                 .message("Movimiento eliminado")
                 .error(false)
                 .data(null)
                 .build();
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (Exception e) {
+            MessageResponse response = MessageResponse.builder()
+                .message("No se pudo eliminar")
+                .error(true)
+                .data(null)
+                .build();
+                
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
-
-        return new ResponseEntity<>(response, status);
     }
 }
