@@ -59,11 +59,8 @@ public class SupplierService {
     @Transactional
     public ResponseEntity<?> saveSupplier(Supplier supplier)
     {
-        MessageResponse response;
-        HttpStatus status;
-
         if(supplierRepository.existsByName(supplier.getName())) {
-            response = MessageResponse.builder()
+            MessageResponse response = MessageResponse.builder()
                .message("El proveedor ya existe")
                .error(true)
                .data(null)
@@ -71,101 +68,78 @@ public class SupplierService {
 
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
-
-        Supplier supplierSaved = supplierRepository.save(supplier);
-
-        if(supplierSaved != null)
-        {
-            status = HttpStatus.CREATED;
-            response = MessageResponse.builder()
+        try {
+            supplierRepository.save(supplier);
+            MessageResponse response = MessageResponse.builder()
                 .message("Proveedor creado")
                 .error(false)
                 .data(supplier)
                 .build();
-                
-        }else{
-            status = HttpStatus.BAD_REQUEST;
-            response = MessageResponse.builder()
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
+        } catch (Exception e) {
+            MessageResponse response = MessageResponse.builder()
                .message("No se pudo crear el proveedor")
                .error(true)
                .data(null)
                .build();
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
-
-        return new ResponseEntity<>(response, status);
     }
 
     public ResponseEntity<?> updateSupplier(Supplier supplier)
     {
-        MessageResponse response;
-        HttpStatus status;
-
         if(supplierRepository.countSuppliersWithSameNameExceptCurrentSupplier(supplier.getName(), supplier.getId()) > 0) {
-            status = HttpStatus.BAD_REQUEST;
-            response = MessageResponse.builder()
+            MessageResponse response = MessageResponse.builder()
                .message("El proveedor ya existe")
                .error(true)
                .data(null)
                .build();
-        }else{
-            
-                Supplier supplierSaved = supplierRepository.save(supplier);
-
-                if(supplierSaved != null)
-                {
-                    status = HttpStatus.CREATED;
-                    response = MessageResponse.builder()
-                        .message("Proveedor actualizado")
-                        .error(false)
-                        .data(supplier)
-                        .build();
-                        
-                }else{
-                    status = HttpStatus.BAD_REQUEST;
-                    response = MessageResponse.builder()
-                    .message("No se pudo crear el proveedor")
-                    .error(true)
-                    .data(null)
-                    .build();
-                }
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<>(response, status);
+
+        try {
+            supplierRepository.save(supplier);
+            MessageResponse response = MessageResponse.builder()
+                .message("Proveedor actualizado")
+                .error(false)
+                .data(supplier)
+                .build();
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            MessageResponse response = MessageResponse.builder()
+            .message("No se pudo crear el proveedor")
+            .error(true)
+            .data(null)
+            .build();
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
     }
 
     public ResponseEntity<?> deleteSupplier(Long id)
     {
-        MessageResponse response;
-        HttpStatus status;
-
         if (!supplierRepository.existsById(id)) {
-            response = MessageResponse.builder()
+            MessageResponse response = MessageResponse.builder()
                 .message("El proveedor no existe")
                 .error(true)
                 .data(null)
                 .build();
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
-
-        supplierRepository.deleteById(id);
-
-        if(supplierRepository.existsById(id))
-        {
-            status = HttpStatus.BAD_REQUEST;
-            response = MessageResponse.builder()
-                .message("No se pudo eliminar")
-                .error(true)
-                .data(null)
-                .build();
-        }else{
-            status = HttpStatus.OK;
-            response = MessageResponse.builder()
+        try {
+            supplierRepository.deleteById(id);
+            MessageResponse response = MessageResponse.builder()
                 .message("Proveedor eliminado")
                 .error(false)
                 .data(null)
                 .build();
+        return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            MessageResponse response = MessageResponse.builder()
+                .message("No se pudo eliminar")
+                .error(true)
+                .data(null)
+                .build();
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
-
-        return new ResponseEntity<>(response, status);
     }
-
 }
