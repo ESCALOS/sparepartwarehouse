@@ -1,5 +1,7 @@
 package com.nanoka.warehouse.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -92,21 +94,35 @@ public class MovementService {
         try {
             Product product = productRepository.findById(movement.getProduct().getId()).orElse(null);
 
-            if(product.getStock() < movement.getQuantity())
+            if(movement.getMovementType().equals(MovementType.SALIDA))
             {
-                movementRepository.save(movement);
-                MessageResponse response = MessageResponse.builder()
-                    .message("No hay suficientes unidades en el producto")
-                    .error(true)
-                    .data(movement)
-                    .build();
-                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+                if(product.getStock() < movement.getQuantity())
+                {
+                    movementRepository.save(movement);
+                    MessageResponse response = MessageResponse.builder()
+                        .message("No hay suficientes unidades en el producto")
+                        .error(true)
+                        .data(movement)
+                        .build();
+                    return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+                }
+
+                BigDecimal unitPrice = product.getPrice().divide(new BigDecimal(product.getStock()),2,RoundingMode.HALF_UP);
+                BigDecimal totalPrice = unitPrice.multiply(new BigDecimal(movement.getQuantity()));
+
+                movement.setPrice(totalPrice);
+
+                product.setStock(product.getStock() - movement.getQuantity());
+                product.setPrice(product.getPrice().subtract(totalPrice));
+                
+            }else{
+                product.setStock(product.getStock() + movement.getQuantity());
+                product.setPrice(product.getPrice().add(movement.getPrice()));
             }
-
-            product.setStock(product.getStock() - movement.getQuantity());
+            
             productRepository.save(product);
-
             movementRepository.save(movement);
+
             MessageResponse response = MessageResponse.builder()
                 .message("Movimiento creado")
                 .error(false)
@@ -155,6 +171,18 @@ public class MovementService {
         }
 
         try {
+            Movement movement = movementRepository.findById(id).orElse(null);
+            Product product = productRepository.findById(movement.getProduct().getId()).orElse(null);
+
+            //Regresar cantidades
+            if(movement.getMovementType().equals(MovementType.SALIDA)){
+                product.setStock(product.getStock() + movement.getQuantity());
+                product.setPrice(product.getPrice().add(movement.getPrice()));
+            }else{
+                product.setStock(product.getStock() - movement.getQuantity());
+                product.setPrice(product.getPrice().subtract(movement.getPrice()));
+            }
+
             movementRepository.deleteById(id);
             MessageResponse response = MessageResponse.builder()
                 .message("Movimiento eliminado")
