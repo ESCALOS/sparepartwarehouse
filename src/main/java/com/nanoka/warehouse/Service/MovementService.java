@@ -2,6 +2,8 @@ package com.nanoka.warehouse.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,12 +11,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import com.nanoka.warehouse.Dto.MovementDto;
+import com.nanoka.warehouse.Dto.UserDto;
 import com.nanoka.warehouse.Model.Entity.Movement;
 import com.nanoka.warehouse.Model.Entity.Product;
+import com.nanoka.warehouse.Model.Entity.User;
 import com.nanoka.warehouse.Model.Enum.MovementType;
 import com.nanoka.warehouse.Model.Payload.MessageResponse;
 import com.nanoka.warehouse.Repository.MovementRepository;
 import com.nanoka.warehouse.Repository.ProductRepository;
+import com.nanoka.warehouse.Repository.UserRepository;
+import com.nanoka.warehouse.Service.Request.MovementRequest;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +32,11 @@ public class MovementService {
     @Autowired
     private MovementRepository movementRepository;
 
-    @Autowired ProductRepository productRepository;
+    @Autowired
+    ProductRepository productRepository;
+
+    @Autowired
+    UserRepository userRepository;
 
     public ResponseEntity<?> getMovements()
     {
@@ -78,31 +89,29 @@ public class MovementService {
     }
 
     @Transactional
-    public ResponseEntity<?> saveMovement(Movement movement)
+    public ResponseEntity<?> saveMovement(MovementRequest movementRequest, MovementType movementType, Principal principal)
     {
-         if(!productRepository.existsById(movement.getProduct().getId()))
-         {
-            movementRepository.save(movement);
-            MessageResponse response = MessageResponse.builder()
-                .message("El producto no existe")
-                .error(true)
-                .data(movement)
-                .build();
-            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-         }
-
         try {
-            Product product = productRepository.findById(movement.getProduct().getId()).orElse(null);
+            Product product = productRepository.findById(movementRequest.getProductId()).orElse(null);
+            User user = userRepository.findByUsername(principal.getName()).orElse(null);
 
-            if(movement.getMovementType().equals(MovementType.SALIDA))
+            Movement movement = Movement.builder()
+                    .product(product)
+                    .quantity(movementRequest.getQuantity())
+                    .price(movementRequest.getPrice())
+                    .movementType(movementType)
+                    .date(LocalDateTime.now())
+                    .user(user)
+                    .build();
+
+            if(movementType.equals(MovementType.SALIDA))
             {
-                if(product.getStock() < movement.getQuantity())
+                if(product.getStock() < movementRequest.getQuantity())
                 {
-                    movementRepository.save(movement);
                     MessageResponse response = MessageResponse.builder()
                         .message("No hay suficientes unidades en el producto")
                         .error(true)
-                        .data(movement)
+                        .data(movementRequest)
                         .build();
                     return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
                 }
@@ -120,18 +129,35 @@ public class MovementService {
                 product.setPrice(product.getPrice().add(movement.getPrice()));
             }
             
-            productRepository.save(product);
             movementRepository.save(movement);
+            productRepository.save(product);
+
+            UserDto userDto = UserDto.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .username(user.getUsername())
+                .role(user.getRole())
+                .build();
+
+            MovementDto movementDto = MovementDto.builder()
+                .id(movement.getId())
+                .product(product)
+                .quantity(movement.getQuantity())
+                .price(movement.getPrice())
+                .type(movement.getMovementType())
+                .date(movement.getDate())
+                .user(userDto)
+                .build();
 
             MessageResponse response = MessageResponse.builder()
                 .message("Movimiento creado")
                 .error(false)
-                .data(movement)
+                .data(movementDto)
                 .build();
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (Exception e) {
             MessageResponse response = MessageResponse.builder()
-               .message("No se pudo crear el movimiento")
+               .message(e.getMessage())
                .error(true)
                .data(null)
                .build();
@@ -139,24 +165,14 @@ public class MovementService {
         }
     }
 
-    public ResponseEntity<?> updateMovement(Movement movement)
+    public ResponseEntity<?> updateMovement(MovementRequest movementRequest)
     {
-        try {
-            movementRepository.save(movement);
-            MessageResponse response = MessageResponse.builder()
-                .message("Movimiento actualizado")
-                .error(false)
-                .data(movement)
-                .build();
-            return new ResponseEntity<>(response, HttpStatus.CREATED);
-        } catch (Exception e) {
-            MessageResponse response = MessageResponse.builder()
-            .message("No se pudo crear el movimiento")
-            .error(true)
-            .data(null)
-            .build();
-            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-        }
+        MessageResponse response = MessageResponse.builder()
+        .message("Método el proceso")
+        .error(true)
+        .data(null)
+        .build();
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     public ResponseEntity<?> deleteMovement(Long id)

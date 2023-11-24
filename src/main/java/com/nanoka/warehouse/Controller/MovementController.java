@@ -1,5 +1,7 @@
 package com.nanoka.warehouse.Controller;
 
+import java.security.Principal;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -12,9 +14,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.nanoka.warehouse.Model.Entity.Movement;
 import com.nanoka.warehouse.Model.Enum.MovementType;
 import com.nanoka.warehouse.Service.MovementService;
+import com.nanoka.warehouse.Service.Request.MovementRequest;
 
 import lombok.RequiredArgsConstructor;
 
@@ -50,16 +52,22 @@ public class MovementController {
         return movementService.getMovement(id);
     }
 
-    @PostMapping()
-    public ResponseEntity<?> saveMovement(@RequestBody Movement movement)
+    @PostMapping(value = "input")
+    public ResponseEntity<?> saveInput(@RequestBody MovementRequest movementRequest, Principal principal)
     {
-        return movementService.saveMovement(movement);
+        return movementService.saveMovement(movementRequest, MovementType.INGRESO, principal);
+    }
+
+    @PostMapping(value = "output")
+    public ResponseEntity<?> saveOutput(@RequestBody MovementRequest movementRequest, Principal principal)
+    {
+        return movementService.saveMovement(movementRequest, MovementType.SALIDA, principal);
     }
 
     @PutMapping()
-    public ResponseEntity<?> updateMovement(@RequestBody Movement movement)
+    public ResponseEntity<?> updateMovement(@RequestBody MovementRequest movementRequest)
     {
-        return movementService.updateMovement(movement);
+        return movementService.updateMovement(movementRequest);
     }
 
     @DeleteMapping(value = "{id}")
